@@ -1,0 +1,9 @@
+{
+  "name": "New Era Habit Tracker",
+  "short_name": "New Era Habits",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#090a0c",
+  "theme_color": "#090a0c",
+  "description": "A simple daily habit tracker."
+}
