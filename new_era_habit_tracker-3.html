@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Era Habit Tracker</title>
+<style>
+:root{--bg:#090a0c;--card:#14161a;--muted:#9298a3;--text:#f4f5f7;--line:#272a31;--accent:#d9dde5;--ok:#7fe0a4}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#070809,#121419);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.app{max-width:760px;margin:auto;padding:24px 16px 48px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.logo{font-weight:800;letter-spacing:2px}.date{color:var(--muted);font-size:13px}
+.hero{background:linear-gradient(135deg,#1b1e23,#0e1013);border:1px solid var(--line);border-radius:24px;padding:22px;margin-bottom:16px;box-shadow:0 18px 45px #0006}
+.hero h1{margin:0 0 5px;font-size:28px}.hero p{margin:0;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.stat{background:#ffffff08;border:1px solid #ffffff0d;border-radius:15px;padding:13px}.stat b{display:block;font-size:22px}.stat span{font-size:11px;color:var(--muted)}
+.section{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 10px}.section h2{font-size:16px;margin:0}.btn{border:1px solid var(--line);background:#181a1f;color:var(--text);padding:9px 13px;border-radius:12px;cursor:pointer}.btn:hover{background:#20232a}
+.habit{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;margin:9px 0}.check{width:27px;height:27px;border-radius:50%;border:2px solid #666d78;background:transparent;color:#111;cursor:pointer;font-weight:900;flex:none}.habit.done .check{background:var(--ok);border-color:var(--ok)}.habit.done .name{text-decoration:line-through;color:#858b95}.name{font-weight:650;flex:1}.meta{font-size:12px;color:var(--muted)}.delete{background:none;border:0;color:#686e78;cursor:pointer;font-size:18px}
+.progress{height:8px;background:#252830;border-radius:99px;overflow:hidden;margin-top:10px}.bar{height:100%;background:#e3e6eb;width:0%;transition:.3s}
+.empty{text-align:center;color:var(--muted);padding:35px;border:1px dashed var(--line);border-radius:17px}
+dialog{border:1px solid var(--line);background:#15171b;color:var(--text);border-radius:20px;padding:20px;width:min(92%,400px)}dialog::backdrop{background:#000a}input{width:100%;padding:12px;background:#0d0f12;border:1px solid var(--line);border-radius:11px;color:white;margin:8px 0 15px;font-size:15px}dialog menu{display:flex;justify-content:flex-end;gap:8px;padding:0;margin:0}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.day{aspect-ratio:1;border-radius:8px;background:#1b1e23;border:1px solid #24272d;display:flex;align-items:center;justify-content:center;font-size:11px;color:#777}.day.full{background:#8bdca5;color:#0a120d}.day.today{outline:2px solid #dfe3e9;outline-offset:1px}
+@media(max-width:480px){.app{padding:18px 12px}.hero h1{font-size:24px}.stats{gap:7px}.stat{padding:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div class="logo">NEW ERA</div><div class="date" id="today"></div></div>
+  <div class="hero">
+    <h1>Build the new you.</h1><p>Small actions. Every day.</p>
+    <div class="stats">
+      <div class="stat"><b id="doneCount">0</b><span>DONE TODAY</span></div>
+      <div class="stat"><b id="totalCount">0</b><span>TOTAL HABITS</span></div>
+      <div class="stat"><b id="streak">0</b><span>BEST STREAK</span></div>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+  </div>
+
+  <div class="section"><h2>Today's habits</h2><button class="btn" onclick="openAdd()">＋ Add habit</button></div>
+  <div id="habits"></div>
+
+  <div class="section"><h2>Last 28 days</h2></div>
+  <div class="calendar" id="calendar"></div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" onsubmit="addHabit(event)">
+    <h2 style="margin-top:0">New habit</h2>
+    <label>Name</label><input id="habitName" placeholder="e.g. Workout" required maxlength="40" autofocus>
+    <menu><button class="btn" value="cancel">Cancel</button><button class="btn" value="default" style="background:#e7e9ed;color:#111">Add</button></menu>
+  </form>
+</dialog>
+
+<script>
+const KEY="newEraHabitsV1";
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||{habits:[]};
+const iso=d=>{d=new Date(d);return d.toISOString().slice(0,10)};
+const today=iso(new Date());
+document.getElementById("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function openAdd(){document.getElementById("dlg").showModal();setTimeout(()=>document.getElementById("habitName").focus(),50)}
+function addHabit(e){e.preventDefault();let n=document.getElementById("habitName").value.trim();if(!n)return;data.habits.push({id:Date.now(),name:n,days:[]});document.getElementById("habitName").value="";document.getElementById("dlg").close();save()}
+function toggle(id){let h=data.habits.find(x=>x.id==id);let i=h.days.indexOf(today);i<0?h.days.push(today):h.days.splice(i,1);save()}
+function removeHabit(id){if(confirm("Delete this habit?")){data.habits=data.habits.filter(h=>h.id!=id);save()}}
+function streak(h){let s=0,d=new Date();while(h.days.includes(iso(d))){s++;d.setDate(d.getDate()-1)}return s}
+function best(h){if(!h.days.length)return 0;let days=[...new Set(h.days)].sort();let best=1,cur=1;for(let i=1;i<days.length;i++){let a=new Date(days[i-1]),b=new Date(days[i]);if((b-a)/86400000===1){cur++;best=Math.max(best,cur)}else cur=1}return best}
+function render(){
+ const box=document.getElementById("habits");box.innerHTML="";
+ let done=0;data.habits.forEach(h=>{let is=h.days.includes(today);if(is)done++;let el=document.createElement("div");el.className="habit"+(is?" done":"");el.innerHTML=`<button class="check" onclick="toggle(${h.id})">${is?"✓":""}</button><div class="name">${escapeHtml(h.name)}<div class="meta">${streak(h)} day current streak</div></div><div class="meta">best ${best(h)}</div><button class="delete" onclick="removeHabit(${h.id})">×</button>`;box.appendChild(el)});
+ if(!data.habits.length)box.innerHTML='<div class="empty">No habits yet. Add your first one above.</div>';
+ document.getElementById("doneCount").textContent=done;document.getElementById("totalCount").textContent=data.habits.length;
+ document.getElementById("bar").style.width=(data.habits.length?done/data.habits.length*100:0)+"%";
+ document.getElementById("streak").textContent=data.habits.reduce((m,h)=>Math.max(m,best(h)),0);
+ let cal=document.getElementById("calendar");cal.innerHTML="";
+ for(let i=27;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=iso(d),full=data.habits.length>0&&data.habits.every(h=>h.days.includes(k));let el=document.createElement("div");el.className="day"+(full?" full":"")+(k===today?" today":"");el.textContent=d.getDate();el.title=k;cal.appendChild(el)}
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+render();
+</script>
+</body>
+</html>
